@@ -1,14 +1,35 @@
 using EVChargingBackend.Mappings;
+using EVChargingBackend.Models;
 using EVChargingBackend.Services;  // For IUserService and UserService
 using Microsoft.AspNetCore.Authentication.JwtBearer;  // For JwtBearerDefaults
 using Microsoft.Extensions.Configuration;  // For IConfiguration
 using Microsoft.IdentityModel.Tokens;  // For JwtBearerDefaults, TokenValidationParameters
-using MongoDB.Driver;
+using MongoDB.Bson.Serialization;
 using MongoDB.Driver;  // For MongoDB-related functionality
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;  // For encoding the SecretKey
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure BSON class maps for MongoDB
+if (!BsonClassMap.IsClassMapRegistered(typeof(GeoLocation)))
+{
+    BsonClassMap.RegisterClassMap<GeoLocation>(cm =>
+    {
+        cm.AutoMap();
+        cm.MapMember(c => c.Latitude).SetElementName("lat");
+        cm.MapMember(c => c.Longitude).SetElementName("lon");
+    });
+}
+
+if (!BsonClassMap.IsClassMapRegistered(typeof(ChargingStation)))
+{
+    BsonClassMap.RegisterClassMap<ChargingStation>(cm =>
+    {
+        cm.AutoMap();
+        cm.SetIgnoreExtraElements(true); // This will ignore any extra fields in the database that don't exist in the model
+    });
+}
 
 // Configure MongoDB connection
 builder.Services.AddSingleton<IMongoDatabase>(sp =>

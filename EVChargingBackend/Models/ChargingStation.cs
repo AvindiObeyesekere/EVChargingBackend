@@ -12,7 +12,15 @@ namespace EVChargingBackend.Models
 
         public string Name { get; set; }
         public string Location { get; set; }
+        public GeoLocation? GeoLocation { get; set; }  // Added to match database schema
         public string Type { get; set; }           // "AC" or "DC"
         public bool Active { get; set; } = true;   // Station status
+        public int NumberOfConnectors { get; set; }  // Added to match database schema
+    }
+
+    public class GeoLocation
+    {
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
     }
 }
