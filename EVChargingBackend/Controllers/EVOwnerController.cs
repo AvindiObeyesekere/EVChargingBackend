@@ -1,10 +1,17 @@
-﻿using System.Security.Claims;
+﻿/****************************************************
+ * File Name: EVOwnerController.cs
+ * Description: Defining Endpoint and Role authentication for Dashboard summary endpoints.
+ * Author: Sehan Devinda
+ * Last Changes Date: 2025-09-27
+ ****************************************************/
+using System.Security.Claims;
 using System.Threading.Tasks;
 using EVChargingBackend.DTOs;
 using EVChargingBackend.Models;
 using EVChargingBackend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 
 namespace EVChargingBackend.Controllers
 {
@@ -138,6 +145,27 @@ namespace EVChargingBackend.Controllers
         {
             var evoOwners = await _eVOwnerService.GetAllEVOwnersAsync();
             return Ok(evoOwners);
+        }
+
+        //get all active evowners
+        [Authorize(Roles = "Backoffice")]
+        [HttpGet("activeev")]
+        public async Task<IActionResult> GetActiveBackofficeEVOwners()
+        {
+            var activeBackofficeEVOwners = await _eVOwnerService.GetActiveBackofficeEVOwnersAsync();
+            return Ok(activeBackofficeEVOwners);
+        }
+
+        // Search EVOwners by NIC fragment (Backoffice only)
+        [Authorize(Roles = "Backoffice")]
+        [HttpGet("search")]
+        public async Task<IActionResult> Search([FromQuery] string q)
+        {
+            if (string.IsNullOrWhiteSpace(q))
+                return BadRequest("Query parameter 'q' is required.");
+
+            var results = await _eVOwnerService.SearchEVOwnersByNICAsync(q);
+            return Ok(results);
         }
 
     }
