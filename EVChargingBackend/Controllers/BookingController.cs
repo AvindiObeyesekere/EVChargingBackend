@@ -139,6 +139,10 @@ namespace EVChargingBackend.Controllers
             var booking = await _bookingService.GetReservationByIdAsync(bookingId);
             if (booking == null) return NotFound("Booking not found");
 
+            // Restriction: cannot cancel if booking is approved AND confirmed
+            if (booking.Approved && booking.Confirmed)
+                return BadRequest("Cannot cancel a booking that has been approved and confirmed.");
+
             // Cannot cancel less than 12 hours before the reservation
             if ((booking.ReservationDateTime - DateTime.UtcNow).TotalHours < 12)
                 return BadRequest("Cannot cancel less than 12 hours before reservation.");
@@ -158,11 +162,11 @@ namespace EVChargingBackend.Controllers
 
 
         //Confirm Booking
-        [Authorize(Roles = "StationOperator")]
+        [Authorize(Roles = "StationOperator,Backoffice")]
         [HttpPost("confirm/{bookingId}")]
         public async Task<IActionResult> ConfirmBooking(string bookingId)
         {
-            var username = User.Identity?.Name; // StationOperator username
+            var username = User.Identity?.Name; // StationOperator or Backoffice username
             var booking = await _bookingService.ConfirmBookingAsync(bookingId, username);
 
             var response = _mapper.Map<BookingResponseDto>(booking);
@@ -172,7 +176,7 @@ namespace EVChargingBackend.Controllers
 
 
         //Complete Booking
-        [Authorize(Roles = "StationOperator")]
+        [Authorize(Roles = "StationOperator, Backoffice")]
         [HttpPost("complete/{bookingId}")]
         public async Task<IActionResult> CompleteBooking(string bookingId)
         {
@@ -182,6 +186,48 @@ namespace EVChargingBackend.Controllers
             var response = _mapper.Map<BookingResponseDto>(booking);
 
             return Ok(response);
+        }
+
+        //Approve Booking
+        [Authorize(Roles = "Backoffice")]
+        [HttpPost("approve/{bookingId}")]
+        public async Task<IActionResult> ApproveBooking(string bookingId)
+        {
+            try
+            {
+                var booking = await _bookingService.ApproveReservationAsync(bookingId);
+                var response = _mapper.Map<BookingResponseDto>(booking);
+                return Ok(response);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound("Booking not found");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        //Reopen Canceled Booking
+        [Authorize(Roles = "Backoffice,StationOperator")]
+        [HttpPost("reopen/{bookingId}")]
+        public async Task<IActionResult> ReopenBooking(string bookingId)
+        {
+            try
+            {
+                var booking = await _bookingService.ReopenReservationAsync(bookingId);
+                var response = _mapper.Map<BookingResponseDto>(booking);
+                return Ok(response);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound("Booking not found");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
 

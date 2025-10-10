@@ -7,9 +7,11 @@ namespace EVChargingBackend.Services
         Task<Booking> CreateReservationAsync(Booking booking);
         Task<Booking> UpdateReservationAsync(string bookingId, Booking updatedBooking);
         Task<bool> CancelReservationAsync(string bookingId);
+        Task<Booking> ReopenReservationAsync(string bookingId);
         Task<Booking> GetReservationByIdAsync(string bookingId);
         Task<Booking> ConfirmBookingAsync(string bookingId, string stationOperatorUsername);
         Task<Booking> CompleteBookingAsync(string bookingId, string stationOperatorUsername);
+        Task<Booking> ApproveReservationAsync(string bookingId);
         Task<List<Booking>> GetBookingsByUserIdAsync(string userId);
         Task<List<Booking>> GetAllBookingsAsync();
         Task<Dictionary<DateTime, long>> GetBookingTrendAsync(int days = 7);

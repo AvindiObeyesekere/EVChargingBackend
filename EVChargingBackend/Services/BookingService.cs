@@ -71,6 +71,29 @@ namespace EVChargingBackend.Services
             return result.ModifiedCount > 0;
         }
 
+        // Reopen canceled reservation
+        public async Task<Booking> ReopenReservationAsync(string bookingId)
+        {
+            var existingBooking = await _bookings.Find(b => b.Id == bookingId).FirstOrDefaultAsync();
+            if (existingBooking == null)
+                throw new KeyNotFoundException("Booking not found");
+
+            if (!existingBooking.Canceled)
+                throw new InvalidOperationException("Booking is not canceled.");
+
+            // Check if reservation is still in the future
+            if (existingBooking.ReservationDateTime <= DateTime.UtcNow)
+                throw new InvalidOperationException("Cannot reopen a past reservation.");
+
+            var filter = Builders<Booking>.Filter.Eq(b => b.Id, bookingId);
+            var update = Builders<Booking>.Update
+                .Set(b => b.Canceled, false)
+                .Set(b => b.UpdatedAt, DateTime.UtcNow);
+
+            await _bookings.UpdateOneAsync(filter, update);
+            return await _bookings.Find(b => b.Id == bookingId).FirstOrDefaultAsync();
+        }
+
 
         // Get reservation by Id
         public async Task<Booking> GetReservationByIdAsync(string bookingId)
@@ -110,6 +133,25 @@ namespace EVChargingBackend.Services
             var filter = Builders<Booking>.Filter.Eq(b => b.Id,bookingId);
             var update = Builders<Booking>.Update
                 .Set(b => b.Completed, true)
+                .Set(b => b.UpdatedAt, DateTime.UtcNow);
+
+            await _bookings.UpdateOneAsync(filter, update);
+            return await GetReservationByIdAsync(bookingId);
+        }
+
+        // Approve a reservation (Backoffice only)
+        public async Task<Booking> ApproveReservationAsync(string bookingId)
+        {
+            var booking = await GetReservationByIdAsync(bookingId);
+            if (booking == null)
+                throw new KeyNotFoundException("Booking not found");
+
+            if (booking.Canceled)
+                throw new InvalidOperationException("Cannot approve a canceled booking.");
+
+            var filter = Builders<Booking>.Filter.Eq(b => b.Id, bookingId);
+            var update = Builders<Booking>.Update
+                .Set(b => b.Approved, true)
                 .Set(b => b.UpdatedAt, DateTime.UtcNow);
 
             await _bookings.UpdateOneAsync(filter, update);
