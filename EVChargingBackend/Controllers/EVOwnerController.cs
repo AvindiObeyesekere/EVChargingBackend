@@ -85,31 +85,15 @@ namespace EVChargingBackend.Controllers
             return Ok(new { Success = success });
         }
 
-        //activate
-        [Authorize(Roles = "EVOwner,Backoffice")]
+        //activate - Only Backoffice can reactivate accounts
+        [Authorize(Roles = "Backoffice")]
         [HttpPost("activate")]
-        public async Task<IActionResult> Activate([FromBody] NICDto dto = null)
+        public async Task<IActionResult> Activate([FromBody] NICDto dto)
         {
-            string nic;
-
-            if (User.IsInRole("EVOwner"))
-            {
-                // Use NIC from token for EVOwner
-                nic = User.FindFirst("nic")?.Value;
-                if (string.IsNullOrEmpty(nic))
-                    return BadRequest("NIC not found in token.");
-            }
-            else if (User.IsInRole("Backoffice"))
-            {
-                // Use NIC from request body for Backoffice
-                nic = dto?.NIC;
-                if (string.IsNullOrEmpty(nic))
-                    return BadRequest("Backoffice must provide NIC in body.");
-            }
-            else
-            {
-                return Forbid();
-            }
+            // Use NIC from request body for Backoffice
+            string nic = dto?.NIC;
+            if (string.IsNullOrEmpty(nic))
+                return BadRequest("NIC must be provided in request body.");
 
             var success = await _eVOwnerService.ActivateEVOwnerAsync(nic);
             return Ok(new { Success = success });

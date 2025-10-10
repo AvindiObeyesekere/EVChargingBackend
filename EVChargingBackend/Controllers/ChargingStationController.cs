@@ -103,7 +103,7 @@ namespace EVChargingBackend.Controllers
             {
                 Id = station.Id,
                 Name = station.Name,
-                Location = station.Location,
+                Location = station.Address,
                 GeoLocation = station.GeoLocation,
                 Type = station.Type,
                 Active = ConvertToBoolean(station.Active)
@@ -123,7 +123,7 @@ namespace EVChargingBackend.Controllers
             {
                 Id = s.Id,
                 Name = s.Name,
-                Location = s.Location,
+                Location = s.Address,
                 GeoLocation = s.GeoLocation,
                 Type = s.Type,
                 Active = ConvertToBoolean(s.Active)
